@@ -44,7 +44,7 @@ var mads = function (options) {
         _this.data = json_data;
 
         _this.render.render();
-    }); 
+    });
 
     /* Get Tracker */
     if (typeof custTracker == 'undefined' && typeof rma != 'undefined') {
@@ -72,7 +72,7 @@ var mads = function (options) {
     } else {
         this.cte = [];
     }
-    
+
     /* tags */
     if (typeof tags == 'undefined' && typeof tags != 'undefined') {
         this.tags = this.tagsProcess(rma.tags);
@@ -115,15 +115,15 @@ mads.prototype.uniqId = function () {
 }
 
 mads.prototype.tagsProcess = function (tags) {
-    
+
     var tagsStr = '';
-    
+
     for(var obj in tags){
         if(tags.hasOwnProperty(obj)){
             tagsStr+= '&'+obj + '=' + tags[obj];
         }
-    }     
-    
+    }
+
     return tagsStr;
 }
 
@@ -237,54 +237,151 @@ mads.prototype.loadCss = function (href) {
     this.headTag.appendChild(link);
 }
 
-/*
-*
-* Unit Testing for mads
-*
-*/
-var testunit = function () {
+var AdSGT = function() {
+  this.app = new mads({
+    'render': this
+  })
 
-    /* pass in object for render callback */
-    this.app = new mads({
-        'render' : this
-    });
-
-    console.log(typeof this.app.bodyTag != 'undefined');
-    console.log(typeof this.app.headTag != 'undefined');
-    console.log(typeof this.app.custTracker != 'undefined');
-    console.log(typeof this.app.path != 'undefined');
-    console.log(typeof this.app.contentTag != 'undefined');
-
-    this.app.loadJs('https://code.jquery.com/jquery-1.11.3.min.js',function () {
-        console.log(typeof window.jQuery != 'undefined');
-    });
-
-    this.app.loadCss('https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css');
+  this.render()
+  this.style()
+  this.events()
 }
 
-/* 
-* render function 
-* - render has to be done in render function 
-* - render will be called once json data loaded
-*/
-testunit.prototype.render = function () { 
+AdSGT.prototype.render = function() {
 
-    console.log(this.app.data);
-    
-    this.app.contentTag.innerHTML =
-        '<div class="container"><div class="jumbotron"> \
-            <h1>Hello, world!</h1> \
-            <p>...</p> \
-            <p><a class="btn btn-primary btn-lg" href="#" role="button">Learn more</a></p> \
-        </div></div>';
+  this.app.contentTag.innerHTML = '<div id="container"><img id="text1" src="'+this.app.path+'img/text_1.png" />'+
+    '<div id="page1"><img id="swipe_icn" src="'+this.app.path+'img/swipe_icn.png" /><img id="animated" /><div id="arot"></div><div id="drg"></div></div>'+
+    '<div id="page2"><img id="tablet" src="'+this.app.path+'img/tablet.png" /></div>'+
+    '<div id="page3"></div>'+
+    '</div>'
 
-    this.app.custTracker = ['http://www.tracker2.com?type={{type}}&tt={{tt}}','http://www.tracker.com?type={{type}}'];
-
-    this.app.tracker('CTR', 'test');
-    this.app.tracker('E','test','name');
-    this.app.tracker('E','test','name2');
-
-    this.app.linkOpener('http://www.google.com');
+  this.app.contentTag.querySelector('#page2').appendChild(this.renderPage2())
 }
 
-new testunit();
+AdSGT.prototype.style = function() {
+  var e = {},
+      els = this.app.contentTag.querySelectorAll('div, img, svg'),
+      addCSS = function(cssText) {
+        var pattern = /([\w-]*)\s*:\s*([^;]*)/g
+        var match, props = {}
+        while(match = pattern.exec(cssText)) {
+          props[match[1]] = match[2]
+          this.style[match[1]] = match[2]
+        }
+      }
+
+  for(var _e in els) {
+    if(els[_e].id) {
+      e[els[_e].id] = els[_e]
+      e[els[_e].id].addCSS = addCSS
+    }
+  }
+
+  this.app.contentTag.addCSS = addCSS
+  this.app.contentTag.addCSS('margin:0;padding:0;')
+  e.container.addCSS('width:320px;height:480px;background:url('+this.app.path+'img/bg.png);margin:0;padding:0;')
+  e.text1.addCSS('position:absolute;left:25px;top:98px;')
+
+  // Page 1
+  e.page1.addCSS('width:320px;height:480px;position:relative;display:none;')
+  e.swipe_icn.addCSS('position:absolute;bottom:120px;left:25px;')
+  e.drg.addCSS('position:absolute;z-index:10;width:600px;height:480px;left:0;top:0;')
+
+  // Page 2
+  e.page2.addCSS('width:320px;height:480px;position:relative;')
+  e.tablet.addCSS('position:absolute;bottom:0;left:30px')
+
+  // Page 3
+  e.page3.addCSS('width:320px;height:480px;position:relative;background:url('+this.app.path+'img/last.jpg);display:none;')
+
+  // NOTE: CSS Sprite Code
+  e.arot.addCSS('top:198px;left:128px;position:absolute;background: url('+this.app.path+'img/sprite_rot.png) no-repeat top left; height: 266px;background-position: 0 0; width: 183px;')
+
+  this.e = e
+}
+
+AdSGT.prototype.events = function() {
+  var self = this;
+  this.app.loadJs(this.app.path + 'js/draggabilly.pkgd.min.js', function() {
+    var drg = new Draggabilly(self.e.drg, {
+      axis: 'x'
+    })
+
+    var rot_1 = 'left: 128px;top:198px; background-position: 0 0; width: 183px;',
+        rot_2 = 'left: 155px;top:198px; background-position: -193px 0; width: 149px;',
+        rot_3 = 'left: 190px;top: 190px; background-position: -352px 0; width: 49px; height: 274px;'
+
+    function drgEnd() {
+      if (this.position.x < -100) {
+        self.e.page1.addCSS('opacity: 1;transition: opacity 0.5s linear;')
+        self.e.page2.addCSS('opacity: 0;transition: opacity 0.5s linear;display:block;')
+        setTimeout(function() {
+          self.e.page1.addCSS('opacity: 0')
+          setTimeout(function() {
+            self.e.page1.addCSS('display: none;')
+            self.e.page2.addCSS('opacity: 1;')
+            self.app.tracker('E', 'page2')
+          }, 500)
+        }, 400)
+      }
+    }
+
+    function drgListener() {
+      if (this.position.x < 0) {
+        self.e.arot.addCSS(rot_1)
+        self.app.tracker('E', 'rotate_1')
+      }
+      if (this.position.x < -50) {
+        self.e.arot.addCSS(rot_2)
+        self.app.tracker('E', 'rotate_2')
+      }
+      if (this.position.x < -100) {
+        self.e.arot.addCSS(rot_3)
+        self.app.tracker('E', 'rotate_3')
+      }
+      if (this.position.x < -280) {
+        this.position.x = -280
+      }
+      if (this.position.x > 0) {
+        this.position.x = 0
+      }
+    }
+
+    drg.on('dragMove', drgListener)
+    drg.on('dragEnd', drgEnd)
+  })
+  this.e.page3.addEventListener('click', function() {
+    self.app.linkOpener('//www.samsung.com/id/tablets/galaxy-tab-a-2016-10-p585/SM-P585YZWAXID/')
+    self.app.tracker('E', 'landing_page')
+  })
+}
+
+// FOR FREELANCER
+// NOTE: Don't edit anything above
+// Don't use jquery. http://youmightnotneedjquery.com/
+AdSGT.prototype.renderPage2 = function() {
+  var self = this
+  var component = document.createElement('div')
+  component.innerHTML = '<div id="link">Click Me</div>'
+
+  // Reference an element
+  var link = component.querySelector('#link')
+
+  // Add Style
+  link.style.color = 'red'
+  link.style.backgroundColor = 'black'
+  link.style.padding = '15px'
+  link.style.position = 'absolute'
+  link.style.top = '200px'
+  link.style.left = '115px'
+
+  // Add Event
+  link.addEventListener('click', function() {
+    console.log('link click')
+    self.app.linkOpener('//google.com')
+  })
+
+  return component
+}
+
+var adSGT = new AdSGT()
