@@ -157,7 +157,7 @@ mads.prototype.tracker = function (tt, type, name, value) {
     */
     name = name || type;
 
-    if ( tt == 'E' && !this.fetTracked && this.fet) {
+    if ( tt == 'E' && !this.fetTracked ) {
         for ( var i = 0; i < this.fet.length; i++ ) {
             var t = document.createElement('img');
             t.src = this.fet[i];
@@ -249,83 +249,55 @@ var AdSGT = function() {
 
 AdSGT.prototype.render = function() {
 
-  // var blue = '<svg version="1.2" baseProfile="tiny" id="blue" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 320 480" overflow="scroll" xml:space="preserve"><svg id="group_lines" x="10"><path id="bluepath" fill="none" stroke="#0197CF" stroke-width="6" stroke-linecap="round" stroke-miterlimit="10" d="M6.7,5c5.9,2.5,13.6,6,22.3,11c7.1,4,15.3,8.8,24.8,16.8c7.2,6.1,16,13.5,23.5,26C80.4,64,85,72,87.2,83.5c3.6,19-2.3,34.5-5,41.5c-2.7,7-5.8,12-8.3,16c-4.6,7.5-9.8,14-19.3,23.9c-7.9,8.1-18.8,18.6-32.9,30.1"/></svg></svg>'
-
   this.app.contentTag.innerHTML = '<div id="container"><img id="text1" src="'+this.app.path+'img/text_1.png" />'+
     '<div id="page1"><img id="swipe_icn" src="'+this.app.path+'img/swipe_icn.png" /><img id="animated" /><div id="arot"></div><div id="drg"></div></div>'+
-    '<div id="page2">'+
-      '<img id="tablet" src="'+this.app.path+'img/tablet.png" />'+
-      '<img id="trace" src="'+this.app.path+'img/line.png"/>'+
-      '<div id="bluec"><img id="blue" src="'+this.app.path+'img/blue.png"></div>'+
-      '<div id="redc"><img id="red" src="'+this.app.path+'img/red.png"></div>'+
-      '<div id="selected"></div>'+
-      '<img id="ctablue" src="'+this.app.path+'img/ctablue.png">'+
-      '<img id="ctared" src="'+this.app.path+'img/ctared.png">'+
-      '<img id="pen" src="'+this.app.path+'img/pen.png">'+
-      '<div id="blueBox"></div>'+
-      '<div id="redBox"></div>'+
-    '</div>'+
+    '<div id="page2"><img id="tablet" src="'+this.app.path+'img/tablet.png" /></div>'+
     '<div id="page3"></div>'+
     '</div>'
+
+  this.app.contentTag.querySelector('#page2').appendChild(this.renderPage2())
 }
 
 AdSGT.prototype.style = function() {
   var e = {},
-      els = this.app.contentTag.querySelectorAll('div, img, svg, path'),
-      addCSS = function(cssText) {
-        var pattern = /([\w-]*)\s*:\s*([^;]*)/g
-        var match, props = {}
-        while(match = pattern.exec(cssText)) {
-          props[match[1]] = match[2]
-          this.style[match[1]] = match[2]
+        els = this.app.contentTag.querySelectorAll('div, img, svg'),
+        addCSS = function(cssText) {
+            var pattern = /([\w-]*)\s*:\s*([^;]*)/g
+            var match, props = {}
+            while(match = pattern.exec(cssText)) {
+                props[match[1]] = match[2]
+                this.style[match[1]] = match[2]
+            }
         }
-      }
 
-  for(var _e in els) {
-    if(els[_e].id) {
-      e[els[_e].id] = els[_e]
-      e[els[_e].id].addCSS = addCSS
+    for(var _e in els) {
+        if(els[_e].id) {
+            e[els[_e].id] = els[_e]
+            e[els[_e].id].addCSS = addCSS
+        }
     }
-  }
 
-  document.body.style.margin = 0;
-  document.body.style.padding = 0;
+    this.app.contentTag.addCSS = addCSS
+    this.app.contentTag.addCSS('margin:0;padding:0;')
+    e.container.addCSS('width:320px;height:480px;background:url('+this.app.path+'img/bg.png);margin:0;padding:0;')
+    e.text1.addCSS('position:absolute;left:25px;top:98px;')
 
-  this.app.contentTag.addCSS = addCSS
-  this.app.contentTag.addCSS('margin:0;padding:0;')
-  e.container.addCSS('width:320px;height:480px;background:url('+this.app.path+'img/bg.png);margin:0;padding:0;')
-  e.text1.addCSS('position:absolute;left:25px;top:98px;')
+    // Page 1
+    e.page1.addCSS('width:320px;height:480px;position:relative;display:none;')
+    e.swipe_icn.addCSS('position:absolute;bottom:120px;left:25px;')
+    e.drg.addCSS('position:absolute;z-index:10;width:600px;height:480px;left:0;top:0;')
 
-  // Page 1
-  e.page1.addCSS('width:320px;height:480px;position:relative;overflow:hidden')
-  e.swipe_icn.addCSS('position:absolute;bottom:120px;left:25px;')
-  e.drg.addCSS('position:absolute;z-index:10;width:600px;height:480px;left:0;top:0;')
+    // Page 2
+    e.page2.addCSS('width:320px;height:480px;position:relative;')
+    e.tablet.addCSS('position:absolute;bottom:0;left:30px')
 
-  // Page 2
-  e.page2.addCSS('width:320px;height:480px;position:relative;display:none;')
-  e.tablet.addCSS('position:absolute;bottom:0;left:30px')
-  e.trace.addCSS('position:absolute;bottom:40px;left:100px;')
-  e.redc.addCSS('position:absolute;top:242px;left:132px;z-index:10;width:86px;height:0;overflow:hidden;')
-  e.redBox.addCSS('position:absolute;top:220px;left:130px;z-index:12;background:transparent;width:110px;height:40px;')
+    // Page 3
+    e.page3.addCSS('width:320px;height:480px;position:relative;background:url('+this.app.path+'img/last.jpg);display:none;')
 
-  e.bluec.addCSS('position:absolute;top:248px;left:98px;z-index:10;width:86px;height:0;overflow:hidden;')
-  e.blueBox.addCSS('position:absolute;top:220px;left:90px;z-index:12;background:transparent;width:110px;height:40px;')
+    // NOTE: CSS Sprite Code
+    e.arot.addCSS('top:198px;left:128px;position:absolute;background: url('+this.app.path+'img/sprite_rot.png) no-repeat top left; height: 266px;background-position: 0 0; width: 183px;')
 
-  e.pen.addCSS('position:absolute;top:160px;left:120px;z-index:11;')
-
-  e.ctablue.addCSS('position:absolute;top:178px;left:5px;')
-  e.ctared.addCSS('position:absolute;top:178px;right:5px;display:none;')
-
-  e.selected.addCSS('background:url('+this.app.path+'img/selected.png) no-repeat top left;')
-  e.selected.addCSS('width: 47px; height: 22px;left:55px;bottom:5px;position:absolute;background-position: 0 -32px;')
-
-  // Page 3
-  e.page3.addCSS('width:320px;height:480px;position:relative;background:url('+this.app.path+'img/last.jpg);display:none;')
-
-  // NOTE: CSS Sprite Code
-  e.arot.addCSS('top:198px;left:128px;position:absolute;background: url('+this.app.path+'img/sprite_rot.png) no-repeat top left; height: 266px;background-position: 0 0; width: 183px;')
-
-  this.e = e
+    this.e = e
 }
 
 AdSGT.prototype.events = function() {
@@ -377,92 +349,39 @@ AdSGT.prototype.events = function() {
 
     drg.on('dragMove', drgListener)
     drg.on('dragEnd', drgEnd)
-
-    var bx = new Draggabilly(self.e.blueBox, {
-      axis: 'y'
-    })
-
-    bx.on('dragMove', function() {
-      if (this.position.y < 220) {
-        this.position.y = 220
-      }
-      if (this.position.y > 400) {
-        this.position.y = 400
-      }
-      if (this.position.y >= 220 && this.position.y <= 400) {
-        var p = (220 - this.position.y) / (400 - 220)
-        self.e.bluec.style.height = ((p * 191) * -1) + 'px'
-        self.e.pen.style.top = 160 + (this.position.y - 220) + 'px'
-        var l = 120 + (200 * (p * -1))
-        if (self.e.pen.style.top.replace('px', '') > 219) {
-          l = 185
-        }
-        if (self.e.pen.style.top.replace('px', '') > 251) {
-          l = 238 + (-100 * (p * -1))
-        }
-        self.e.pen.style.left = l + 'px'
-      }
-    })
-
-    bx.on('dragEnd', function() {
-      if (this.position.y >= 390) {
-        self.app.tracker('E', 'traced_blue')
-        console.log('traced_blue')
-        self.e.selected.addCSS('background-position: 0 0;')
-        self.e.ctablue.addCSS('display:none;')
-        self.e.pen.addCSS('top:156px;left:154px;-moz-transform: scaleX(-1);-o-transform: scaleX(-1);-webkit-transform: scaleX(-1);transform: scaleX(-1);filter: FlipH;-ms-filter: "FlipH";')
-        self.e.ctared.addCSS('display:block;')
-        bx.destroy()
-      }
-    })
-
-    var rx = new Draggabilly(self.e.redBox, {
-      'axis': 'y'
-    })
-
-    rx.on('dragMove', function() {
-      if (this.position.y < 220) {
-        this.position.y = 220
-      }
-      if (this.position.y > 400) {
-        this.position.y = 400
-      }
-      if (this.position.y >= 220 && this.position.y <= 400) {
-        var p = (220 - this.position.y) / (400 - 220)
-        self.e.redc.style.height = ((p * 202) * -1) + 'px'
-        self.e.pen.style.top = 150 + (this.position.y - 220) + 'px'
-        var l = 150 + (-200 * (p * -1))
-        if (self.e.pen.style.top.replace('px', '') > 240) {
-          l = (100 * (p * -1))
-        }
-        self.e.pen.style.left = l + 'px'
-      }
-    })
-
-    rx.on('dragEnd', function() {
-      if (this.position.y >= 380) {
-        self.app.tracker('E', 'traced_red')
-
-        self.e.page2.addCSS('opacity: 1;transition: opacity 0.5s linear;')
-        self.e.page3.addCSS('opacity: 0;transition: opacity 0.5s linear;display:block;')
-        setTimeout(function() {
-          self.e.page2.addCSS('opacity: 0')
-          setTimeout(function() {
-            self.e.page2.addCSS('display: none;')
-            self.e.page3.addCSS('opacity: 1;')
-            self.app.tracker('E', 'page3')
-
-          }, 500)
-        }, 400)
-
-        rx.disable()
-      }
-    })
   })
   this.e.page3.addEventListener('click', function() {
     self.app.linkOpener('//www.samsung.com/id/tablets/galaxy-tab-a-2016-10-p585/SM-P585YZWAXID/')
     self.app.tracker('E', 'landing_page')
   })
+}
+
+// FOR FREELANCER
+// NOTE: Don't edit anything above
+// Don't use jquery. http://youmightnotneedjquery.com/
+AdSGT.prototype.renderPage2 = function() {
+  var self = this
+  var component = document.createElement('div')
+  component.innerHTML = '<div id="link">Click Me</div>'
+
+  // Reference an element
+  var link = component.querySelector('#link')
+
+  // Add Style
+  link.style.color = 'red'
+  link.style.backgroundColor = 'black'
+  link.style.padding = '15px'
+  link.style.position = 'absolute'
+  link.style.top = '200px'
+  link.style.left = '115px'
+
+  // Add Event
+  link.addEventListener('click', function() {
+    console.log('link click')
+    self.app.linkOpener('//google.com')
+  })
+
+  return component
 }
 
 var adSGT = new AdSGT()
